@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Shared
@@ -13,6 +14,11 @@ namespace Shared
             m_fileName = fileName;
         }
 
+        private static T Require<T>(string key, string fileName)
+        {
+            throw new KeyNotFound(key, fileName);
+        }
+
         public bool HasKey(string key)
         {
             return m_options.ContainsKey(key);
@@ -24,6 +30,16 @@ namespace Shared
             {
                 yield return option.Key;
             }
+        }
+
+        /// <summary>
+        /// Similar to <see cref="ReadValue" />, but requires the
+        /// value to be present in the file.
+        /// </summary>
+        /// <exception cref="KeyNotFound" />
+        public string RequireString(string key)
+        {
+            return ReadValue(key) ?? Require<string>(key, m_fileName);
         }
 
         public string ReadValue(string key, string defaultValue = null)
@@ -123,6 +139,15 @@ namespace Shared
 
             // Reset all options too
             m_options = new Dictionary<string, string>();
+        }
+
+
+        public class KeyNotFound : Exception
+        {
+            public KeyNotFound(string key, string fileName)
+                : base($"could not find the key '{key}' in the options file '{fileName}'")
+            {
+            }
         }
     }
 }
