@@ -7,16 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChaosMod", "ChaosMod\ChaosM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigApp", "ConfigApp\ConfigApp.csproj", "{9FB10F9B-9F3F-4FEC-9237-7059E15C8953}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchChatVotingProxy", "TwitchChatVotingProxy\TwitchChatVotingProxy.csproj", "{4765F6E3-B78C-4B76-BA30-AA5362862818}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwitchChatVotingProxy", "TwitchChatVotingProxy\TwitchChatVotingProxy.csproj", "{4765F6E3-B78C-4B76-BA30-AA5362862818}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Shared", "Shared\Shared.shproj", "{E8C71724-789E-46CF-82B9-8A9C0D964E91}"
 EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Shared\Shared.projitems*{4765f6e3-b78c-4b76-ba30-aa5362862818}*SharedItemsImports = 4
-		Shared\Shared.projitems*{9fb10f9b-9f3f-4fec-9237-7059e15c8953}*SharedItemsImports = 4
-		Shared\Shared.projitems*{e8c71724-789e-46cf-82b9-8a9c0d964e91}*SharedItemsImports = 13
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
@@ -40,5 +35,10 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CC955B93-4342-4B53-BDC1-096AEEFA72F6}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Shared\Shared.projitems*{4765f6e3-b78c-4b76-ba30-aa5362862818}*SharedItemsImports = 5
+		Shared\Shared.projitems*{9fb10f9b-9f3f-4fec-9237-7059e15c8953}*SharedItemsImports = 4
+		Shared\Shared.projitems*{e8c71724-789e-46cf-82b9-8a9c0d964e91}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal
