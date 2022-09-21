@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -12,6 +12,7 @@ namespace Shared
         public OptionsFile(string fileName)
         {
             m_fileName = fileName;
+            ReadFile();
         }
 
         private static T Require<T>(string key, string fileName)

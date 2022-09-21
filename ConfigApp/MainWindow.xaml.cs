@@ -118,8 +118,6 @@ namespace ConfigApp
 
         private void ParseConfigFile()
         {
-            m_configFile.ReadFile();
-
             misc_user_effects_spawn_dur.Text = m_configFile.ReadValue("NewEffectSpawnTime", "30");
             misc_user_effects_timed_dur.Text = m_configFile.ReadValue("EffectTimedDur", "90");
             misc_user_effects_random_seed.Text = m_configFile.ReadValue("Seed");
@@ -189,8 +187,6 @@ namespace ConfigApp
 
         private void ParseTwitchFile()
         {
-            m_twitchFile.ReadFile();
-
             twitch_user_agreed.IsChecked = m_twitchFile.ReadValueBool("EnableTwitchVoting", false);
             twitch_user_channel_name.Text = m_twitchFile.ReadValue("TwitchChannelName");
             twitch_user_user_name.Text = m_twitchFile.ReadValue("TwitchUserName");
@@ -221,8 +217,6 @@ namespace ConfigApp
 
         private void ParseEffectsFile()
         {
-            m_effectsFile.ReadFile();
-
             foreach (string key in m_effectsFile.GetKeys())
             {
                 string value = m_effectsFile.ReadValue(key);
