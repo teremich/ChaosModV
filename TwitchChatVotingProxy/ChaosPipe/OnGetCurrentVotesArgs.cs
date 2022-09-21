@@ -8,6 +8,6 @@ namespace TwitchChatVotingProxy.ChaosPipe
 {
     class OnGetCurrentVotesArgs
     {
-        public List<int> CurrentVotes { get; set; }
+        public List<int>? CurrentVotes { get; set; }
     }
 }
