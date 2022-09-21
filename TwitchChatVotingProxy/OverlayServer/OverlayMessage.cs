@@ -1,4 +1,4 @@
-﻿namespace TwitchChatVotingProxy.OverlayServer
+namespace TwitchChatVotingProxy.OverlayServer
 {
     /// <summary>
     /// Message which is being sent 
@@ -22,5 +22,12 @@
         /// Voting options them self
         /// </summary>
         public OverlayVoteOption[] voteOptions { get; set; }
+
+        public OverlayMessage(string request, string votingMode, OverlayVoteOption[] voteOptions)
+        {
+            this.request = request;
+            this.votingMode = votingMode;
+            this.voteOptions = voteOptions;
+        }
     }
 }

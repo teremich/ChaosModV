@@ -1,4 +1,4 @@
-﻿using Fleck;
+using Fleck;
 using Newtonsoft.Json;
 using Serilog;
 using System;
@@ -99,22 +99,16 @@ namespace TwitchChatVotingProxy.OverlayServer
         /// <param name="voteOptions">Vote options that should be sent</param>
         private void Request(string request, List<IVoteOption> voteOptions)
         {
-            var msg = new OverlayMessage();
-            msg.request = request;
-            msg.voteOptions = voteOptions.ConvertAll(_ => new OverlayVoteOption(_)).ToArray();
-            msg.retainInitialVotes = config.RetainInitialVotes;
-            var strVotingMode = VotingMode.Lookup(config.VotingMode);
-            if (strVotingMode != null)
-            {
-                msg.votingMode = strVotingMode;
-            } else
-            {
-                logger.Error($"could not find voting mode {config.VotingMode} in dictionary");
-                msg.votingMode = "UNKNOWN_VOTING_MODE";
-            }
+            var msg = new OverlayMessage(
+                request,
+                voteOptions: voteOptions.ConvertAll(_ => new OverlayVoteOption(_)).ToArray(),
+                votingMode: config.RetainInitialVotes.ToString()
+            );
+
             // Count total votes      
             msg.totalVotes = 0;
             voteOptions.ForEach(_ => msg.totalVotes += _.Votes);
+
             // Send the message to all clients
             Broadcast(JsonConvert.SerializeObject(msg));
         }
