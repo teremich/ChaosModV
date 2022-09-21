@@ -42,7 +42,15 @@ namespace Shared
             return ReadValue(key) ?? Require<string>(key, m_fileName);
         }
 
+        // HACK: Remove pragma warning disable
+        // This is only added because the file is compiled in two different projects.
+        // One of them checks for strict nullability (voting proxy), the other doesn't (config app).
+        // In addition, the config app uses an other framework target, so the optional operator (?)
+        // cannot be used.
+        // The solution is to upgrade the config app to a newer framework target.
+        #pragma warning disable CS8625
         public string ReadValue(string key, string defaultValue = null)
+        # pragma warning restore CS8625 
         {
             return HasKey(key) ? m_options[key] : defaultValue;
         }
