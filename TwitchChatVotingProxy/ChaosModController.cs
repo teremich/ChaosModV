@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 using TwitchChatVotingProxy.ChaosPipe;
-using TwitchChatVotingProxy.Config;
 using TwitchChatVotingProxy.OverlayServer;
 using TwitchChatVotingProxy.VotingReceiver;
 
@@ -18,7 +17,7 @@ namespace TwitchChatVotingProxy
         private IChaosPipeClient chaosPipe;
         private Timer displayUpdateTick = new Timer(DISPLAY_UPDATE_TICKRATE);
         private ILogger logger = Log.Logger.ForContext<ChaosModController>();
-        private IOverlayServer? overlayServer;
+        private IOverlayServer overlayServer;
         private Dictionary<string, int> userVotedFor = new Dictionary<string, int>();
         private Random random = new Random();
         private Boolean retainInitialVotes;
@@ -34,7 +33,8 @@ namespace TwitchChatVotingProxy
             IOverlayServer overlayServer,
             IVotingReceiver votingReceiver,
             IConfig config
-        ) {
+        )
+        {
             this.chaosPipe = chaosPipe;
             this.overlayServer = overlayServer;
             this.votingReceiver = votingReceiver;
@@ -62,7 +62,7 @@ namespace TwitchChatVotingProxy
         /// <summary>
         /// Does the display update tick and is called by a timer
         /// </summary>
-        private void DisplayUpdateTick(object sender, ElapsedEventArgs e)
+        private void DisplayUpdateTick(object? sender, ElapsedEventArgs e)
         {
             overlayServer.UpdateVoting(activeVoteOptions);
         }
@@ -117,21 +117,22 @@ namespace TwitchChatVotingProxy
         /// <summary>
         /// Is called when the chaos mod pipe requests the current votes (callback)
         /// </summary>
-        private void OnGetCurrentVotes(object sender, OnGetCurrentVotesArgs args)
+        private void OnGetCurrentVotes(object? sender, OnGetCurrentVotesArgs args)
         {
             args.CurrentVotes = activeVoteOptions.Select(_ => _.Votes).ToList();
         }
         /// <summary>
         /// Is called when the chaos mod wants to know the voting result (callback)
         /// </summary>
-        private void OnGetVoteResult(object sender, OnGetVoteResultArgs e)
+        private void OnGetVoteResult(object? sender, OnGetVoteResultArgs e)
         {
             // Tell the overlay server that the vote has ended
             try
             {
                 overlayServer.EndVoting();
 
-            } catch (Exception err)
+            }
+            catch (Exception err)
             {
                 Log.Error(err, "error occured");
             }
@@ -153,7 +154,7 @@ namespace TwitchChatVotingProxy
         /// <summary>
         /// Is called when the chaos mod start a new vote (callback)
         /// </summary>
-        private void OnNewVote(object sender, OnNewVoteArgs e)
+        private void OnNewVote(object? sender, OnNewVoteArgs e)
         {
             activeVoteOptions = e.VoteOptionNames.ToList().Select((voteOptionName, index) =>
             {
@@ -212,14 +213,14 @@ namespace TwitchChatVotingProxy
         /// <summary>
         /// Is called when the chaos mod stars a no voting round (callback)
         /// </summary>
-        private void OnNoVotingRound(object sender, EventArgs e)
+        private void OnNoVotingRound(object? sender, EventArgs e)
         {
             overlayServer.NoVotingRound();
         }
         /// <summary>
         /// Is called when the voting receiver receives a message
         /// </summary>
-        private void OnVoteReceiverMessage(object sender, OnMessageArgs e)
+        private void OnVoteReceiverMessage(object? sender, OnMessageArgs e)
         {
             if (!voteRunning) return;
 
@@ -252,20 +253,20 @@ namespace TwitchChatVotingProxy
                     int previousVote;
 
                     // Check if the player has already voted
-                    if (!userVotedFor.TryGetValue(e.ClientId, out previousVote))
+                    if (!userVotedFor.TryGetValue(e.UserId, out previousVote))
                     {
                         // If they haven't voted, count his vote
-                        userVotedFor.Add(e.ClientId, i);
+                        userVotedFor.Add(e.UserId, i);
                         voteOption.Votes++;
-       
-                    } else if (previousVote != i)
+                    }
+                    else if (previousVote != i)
                     {
                         // If the player has already voted, and it's not the same as before,
                         // remove the old vote, and add the new one.
-                        userVotedFor.Remove(e.ClientId);
+                        userVotedFor.Remove(e.UserId);
                         activeVoteOptions[previousVote].Votes--;
-                        
-                        userVotedFor.Add(e.ClientId, i);
+
+                        userVotedFor.Add(e.UserId, i);
                         voteOption.Votes++;
                     }
 
