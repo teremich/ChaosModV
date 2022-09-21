@@ -6,8 +6,15 @@
     /// </summary>
     class OnMessageArgs
     {
-        public string ClientId { get; set; }
+        public string UserId { get; set; }
         public string Message { get; set; }
         public string Username { get; set; }
+
+        public OnMessageArgs(string userId, string message, string username)
+        {
+            UserId = userId;
+            Message = message;
+            Username = username;
+        }
     }
 }
