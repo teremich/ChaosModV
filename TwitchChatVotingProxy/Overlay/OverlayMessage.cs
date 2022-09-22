@@ -1,18 +1,12 @@
-namespace TwitchChatVotingProxy.OverlayServer
+﻿namespace TwitchChatVotingProxy.Overlay
 {
-    /// <summary>
-    /// Message which is being sent 
-    /// </summary>
-    class OverlayMessage
+    class Message
     {
         public bool retainInitialVotes { get; set; }
         /// <summary>
         /// request type
         /// </summary>
         public string request { get; set; }
-        /// <summary>
-        /// total vote count
-        /// </summary>
         public int totalVotes { get; set; }
         /// <summary>
         /// what voting mode should be used, this results in display changes
@@ -21,9 +15,9 @@ namespace TwitchChatVotingProxy.OverlayServer
         /// <summary>
         /// Voting options them self
         /// </summary>
-        public OverlayVoteOption[] voteOptions { get; set; }
+        public VoteOption[] voteOptions { get; set; }
 
-        public OverlayMessage(string request, string votingMode, OverlayVoteOption[] voteOptions)
+        public Message(string request, string votingMode, VoteOption[] voteOptions)
         {
             this.request = request;
             this.votingMode = votingMode;

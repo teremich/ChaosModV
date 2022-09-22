@@ -1,34 +1,35 @@
-using Fleck;
+﻿using Fleck;
 using Newtonsoft.Json;
 using Serilog;
 using System;
 using System.Collections.Generic;
 
 // TODO: fix voting mode
-namespace TwitchChatVotingProxy.OverlayServer
+namespace TwitchChatVotingProxy.Overlay
 {
-    class OverlayServer : IOverlayServer
+    class Server : IServer
     {
-        private OverlayServerConfig config;
+        private ChaosModControllerOptions options;
         private List<Fleck.IWebSocketConnection> connections = new List<Fleck.IWebSocketConnection>();
-        private ILogger logger = Log.Logger.ForContext<OverlayServer>();
+        private ILogger logger = Log.Logger.ForContext<Server>();
 
-        public OverlayServer(OverlayServerConfig config)
+        public Server(ChaosModControllerOptions options)
         {
-            this.config = config;
+            this.options = options;
 
             try
             {
-                var WSS = new Fleck.WebSocketServer($"ws://0.0.0.0:{config.Port}");
+                var WSS = new Fleck.WebSocketServer($"ws://0.0.0.0:{options.OverlayServerSocketPort}");
                 // Set the websocket listeners
                 WSS.Start(connection =>
                 {
                     connection.OnOpen += () => OnWsConnectionOpen(connection);
                     connection.OnClose += () => OnWSConnectionClose(connection);
                 });
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
-                logger.Fatal(e, "failed so start websocket server");
+                throw new Exception("failed to start websocket server", e);
             }
         }
 
@@ -72,7 +73,8 @@ namespace TwitchChatVotingProxy.OverlayServer
             {
                 logger.Information($"websocket client disconnected {connection.ConnectionInfo.ClientIpAddress}");
                 connections.Remove(connection);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 logger.Error(e, "error occurred as client disconnected");
             }
@@ -87,7 +89,8 @@ namespace TwitchChatVotingProxy.OverlayServer
             {
                 logger.Information($"new websocket client {connection.ConnectionInfo.ClientIpAddress}");
                 connections.Add(connection);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 logger.Error(e, "error occurred as client connected");
             }
@@ -99,10 +102,10 @@ namespace TwitchChatVotingProxy.OverlayServer
         /// <param name="voteOptions">Vote options that should be sent</param>
         private void Request(string request, List<IVoteOption> voteOptions)
         {
-            var msg = new OverlayMessage(
+            var msg = new Message(
                 request,
-                voteOptions: voteOptions.ConvertAll(_ => new OverlayVoteOption(_)).ToArray(),
-                votingMode: config.RetainInitialVotes.ToString()
+                voteOptions: voteOptions.ConvertAll(_ => new VoteOption(_)).ToArray(),
+                votingMode: options.RetainInitialVotes.ToString()
             );
 
             // Count total votes      
@@ -114,5 +117,3 @@ namespace TwitchChatVotingProxy.OverlayServer
         }
     }
 }
-
-

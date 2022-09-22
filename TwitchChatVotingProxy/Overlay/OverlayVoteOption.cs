@@ -4,15 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TwitchChatVotingProxy.OverlayServer
+namespace TwitchChatVotingProxy.Overlay
 {
     /// <summary>
     /// Represents how the vote options are being sent to the client after
     /// JSON serializing them.
     /// </summary>
-    class OverlayVoteOption
+    class VoteOption
     {
-        public OverlayVoteOption(IVoteOption voteOption)
+        public VoteOption(IVoteOption voteOption)
         {
             label = voteOption.Label;
             value = voteOption.Votes;
