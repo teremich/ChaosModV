@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 using System;
 using System.IO;
 using System.IO.Pipes;
@@ -53,8 +53,7 @@ namespace TwitchChatVotingProxy.ChaosPipe
             }
             catch (Exception e)
             {
-                logger.Fatal(e, "failed to connect to chaos mod pipe, aborting");
-                throw e;
+                throw new Exception("failed to connect to chaos mod pipe", e);
             }
         }
 
