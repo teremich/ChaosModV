@@ -4,57 +4,48 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 using TwitchChatVotingProxy.ChaosPipe;
-using TwitchChatVotingProxy.OverlayServer;
 using TwitchChatVotingProxy.VotingReceiver;
 
 namespace TwitchChatVotingProxy
 {
     class ChaosModController
     {
-        public static readonly int DISPLAY_UPDATE_TICKRATE = 200;
+        private static readonly int DISPLAY_UPDATE_TICK_RATE = 200;
 
         private List<IVoteOption> activeVoteOptions = new List<IVoteOption>();
         private IChaosPipeClient chaosPipe;
-        private Timer displayUpdateTick = new Timer(DISPLAY_UPDATE_TICKRATE);
+        private Timer displayUpdateTick = new Timer(DISPLAY_UPDATE_TICK_RATE);
         private ILogger logger = Log.Logger.ForContext<ChaosModController>();
-        private IOverlayServer overlayServer;
+        private Overlay.IServer? overlayServer;
         private Dictionary<string, int> userVotedFor = new Dictionary<string, int>();
         private Random random = new Random();
-        private Boolean retainInitialVotes;
+        private ChaosModControllerOptions options;
         private int voteCounter = 0;
         private bool voteRunning = false;
-        private EVotingMode? votingMode;
-        private EOverlayMode? overlayMode;
         private IVotingReceiver votingReceiver;
-        private string[] permittedUsernames;
 
         public ChaosModController(
+            ChaosModControllerOptions options,
             IChaosPipeClient chaosPipe,
-            IOverlayServer overlayServer,
             IVotingReceiver votingReceiver,
-            IConfig config
+            Overlay.IServer? overlayServer
         )
         {
+            this.options = options;
             this.chaosPipe = chaosPipe;
             this.overlayServer = overlayServer;
             this.votingReceiver = votingReceiver;
 
-            // Setup pipe listeners
+            // Setup listeners that connect to the "game" part of the mod
             this.chaosPipe.OnGetCurrentVotes += OnGetCurrentVotes;
             this.chaosPipe.OnGetVoteResult += OnGetVoteResult;
             this.chaosPipe.OnNewVote += OnNewVote;
             this.chaosPipe.OnNoVotingRound += OnNoVotingRound;
 
-            // Setup receiver listeners
+            // Setup listener for the votes
             this.votingReceiver.OnMessage += OnVoteReceiverMessage;
 
-            // Setup config options
-            votingMode = config.VotingMode;
-            overlayMode = config.OverlayMode;
-            retainInitialVotes = config.RetainInitalVotes;
-            permittedUsernames = config.PermittedTwitchUsernames;
-
-            // Setup display update tick
+            // Setup the timer that will update the display
             displayUpdateTick.Elapsed += DisplayUpdateTick;
             displayUpdateTick.Enabled = true;
         }
@@ -90,20 +81,21 @@ namespace TwitchChatVotingProxy
         /// and choosing a random option based on that percentage.
         private int GetVoteResultByPercentage()
         {
-            // Get total votes
-            var votes = activeVoteOptions.Select(_ => retainInitialVotes ? _.Votes + 1 : _.Votes).ToList();
-            var totalVotes = 0;
-            votes.ForEach(_ => totalVotes += _);
+            var votesForOption = activeVoteOptions
+                .Select(_ => options.RetainInitialVotes ? _.Votes + 1 : _.Votes)
+                .ToList();
+            var totalVotes = votesForOption.Sum();
+
             // If we have no votes, choose one at random
-            if (totalVotes == 0) return random.Next(0, votes.Count);
+            if (totalVotes == 0) return random.Next(0, votesForOption.Count);
             // Select a random vote from all votes
             var selectedVote = random.Next(1, totalVotes + 1);
             // Now find out in what vote range/option that vote is
             var voteRange = 0;
             var selectedOption = 0;
-            for (var i = 0; i < votes.Count; i++)
+            for (var i = 0; i < votesForOption.Count; i++)
             {
-                voteRange += votes[i];
+                voteRange += votesForOption[i];
                 if (selectedVote <= voteRange)
                 {
                     selectedOption = i;
@@ -134,11 +126,11 @@ namespace TwitchChatVotingProxy
             }
             catch (Exception err)
             {
-                Log.Error(err, "error occured");
+                Log.Error(err, "error ocurred");
             }
 
             // Evaluate what result calculation to use
-            switch (votingMode)
+            switch (options.VotingEvaluationMode)
             {
                 case EVotingMode.MAJORITY:
                     e.ChosenOption = GetVoteResultByMajority();
@@ -171,7 +163,7 @@ namespace TwitchChatVotingProxy
                 return (IVoteOption)new VoteOption(voteOptionName, new List<string>() { match });
             }).ToList();
             // Depending on the overlay mode either inform the overlay server about the new vote or send a chat message
-            switch (overlayMode)
+            switch (options.OverlayMode)
             {
                 case EOverlayMode.CHAT_MESSAGES:
                     votingReceiver.SendMessage("Time for a new effect! Vote between:");
@@ -192,7 +184,7 @@ namespace TwitchChatVotingProxy
                         votingReceiver.SendMessage(msg);
                     }
 
-                    if (votingMode == EVotingMode.PERCENTAGE)
+                    if (options.VotingEvaluationMode == EVotingMode.PERCENTAGE)
                     {
                         votingReceiver.SendMessage("Votes will affect the chance for one of the effects to occur.");
                     }
@@ -224,55 +216,49 @@ namespace TwitchChatVotingProxy
         {
             if (!voteRunning) return;
 
-            if (permittedUsernames.Length > 0)
-            {
-                bool found = false;
-
-                foreach (string name in permittedUsernames)
-                {
-                    // both have already been lowered in other methods, so this comparison is always case-insensitive
-                    if (name == e.Username)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    return;
-                }
-            }
+            if (!IsUserAllowedToVote(e.Username)) return;
 
             for (int i = 0; i < activeVoteOptions.Count; i++)
             {
                 var voteOption = activeVoteOptions[i];
 
-                if (voteOption.Matches.Contains(e.Message))
+                if (!voteOption.Matches.Contains(e.Message))
                 {
-                    int previousVote;
-
-                    // Check if the player has already voted
-                    if (!userVotedFor.TryGetValue(e.UserId, out previousVote))
-                    {
-                        // If they haven't voted, count his vote
-                        userVotedFor.Add(e.UserId, i);
-                        voteOption.Votes++;
-                    }
-                    else if (previousVote != i)
-                    {
-                        // If the player has already voted, and it's not the same as before,
-                        // remove the old vote, and add the new one.
-                        userVotedFor.Remove(e.UserId);
-                        activeVoteOptions[previousVote].Votes--;
-
-                        userVotedFor.Add(e.UserId, i);
-                        voteOption.Votes++;
-                    }
-
-                    break;
+                    continue;
                 }
+
+                int previousVote;
+
+                // Check if the player has already voted
+                if (!userVotedFor.TryGetValue(e.UserId, out previousVote))
+                {
+                    // If they haven't voted, count his vote
+                    userVotedFor.Add(e.UserId, i);
+                    voteOption.Votes++;
+                }
+                else if (previousVote != i)
+                {
+                    // If the player has already voted, and it's not the same as before,
+                    // remove the old vote, and add the new one.
+                    userVotedFor.Remove(e.UserId);
+                    activeVoteOptions[previousVote].Votes--;
+
+                    userVotedFor.Add(e.UserId, i);
+                    voteOption.Votes++;
+                }
+
+                break;
             }
+        }
+        private bool IsUserAllowedToVote(string username)
+        {
+            // No names means everyone is allowed to vote
+            if (options.PermittedUsernames.Length == 0)
+            {
+                return true;
+            }
+
+            return options.PermittedUsernames.Contains(username);
         }
     }
 }
