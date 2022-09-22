@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -34,6 +34,47 @@ namespace Shared
         }
 
         /// <summary>
+        /// Similar to <see cref="ReadValueBool" />, but requires the
+        /// bool to be present in the file.
+        /// Note that booleans are represented using the digits '0' and '1'.
+        /// </summary>
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="FormatException" />
+        /// <exception cref="OverflowException" />
+        public bool RequireBool(string key)
+        {
+            if (!HasKey(key))
+            {
+                return Require<bool>(key, m_fileName);
+            }
+
+            if (int.Parse(ReadValue(key)) == 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Similar to <see cref="ReadValueInt" />, but requires the
+        /// int to be present in the file.
+        /// </summary>
+        /// <exception cref="KeyNotFound" />
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="FormatException" />
+        /// <exception cref="OverflowException" />
+        public int RequireInt(string key)
+        {
+            if (!HasKey(key))
+            {
+                return Require<int>(key, m_fileName);
+            }
+
+            return int.Parse(key);
+        }
+
+        /// <summary>
         /// Similar to <see cref="ReadValue" />, but requires the
         /// value to be present in the file.
         /// </summary>
@@ -49,9 +90,9 @@ namespace Shared
         // In addition, the config app uses an other framework target, so the optional operator (?)
         // cannot be used.
         // The solution is to upgrade the config app to a newer framework target.
-        #pragma warning disable CS8625
+#pragma warning disable CS8625
         public string ReadValue(string key, string defaultValue = null)
-        # pragma warning restore CS8625 
+#pragma warning restore CS8625
         {
             return HasKey(key) ? m_options[key] : defaultValue;
         }
