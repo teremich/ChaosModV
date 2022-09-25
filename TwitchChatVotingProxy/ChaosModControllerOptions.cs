@@ -5,7 +5,7 @@ namespace TwitchChatVotingProxy
 {
     class ChaosModControllerOptions
     {
-        private static readonly int DISPLAY_UPDATE_TICK_RATE = 200;
+        private static readonly int VOTING_DISPLAY_UPDATE_MS = 200;
         private static readonly string KEY_OVERLAY_SERVER_PORT = "OverlayServerPort";
         // TODO: generalize value of key
         private static readonly string KEY_VOTING_EVALUATION_MODE = "TwitchVotingChanceSystem";
@@ -16,6 +16,7 @@ namespace TwitchChatVotingProxy
         // TODO: generalize value of key
         private static readonly string KEY_PERMITTED_USERNAMES = "TwitchPermittedUsernames";
 
+        public int VotingDisplayUpdateMs = VOTING_DISPLAY_UPDATE_MS;
         public int OverlayServerSocketPort;
         public EVotingMode VotingEvaluationMode;
         public EOverlayMode OverlayMode;
