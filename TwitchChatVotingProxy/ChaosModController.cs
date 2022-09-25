@@ -10,11 +10,9 @@ namespace TwitchChatVotingProxy
 {
     class ChaosModController
     {
-        private static readonly int DISPLAY_UPDATE_TICK_RATE = 200;
-
         private List<IVoteOption> activeVoteOptions = new List<IVoteOption>();
         private IChaosPipeClient chaosPipe;
-        private Timer displayUpdateTick = new Timer(DISPLAY_UPDATE_TICK_RATE);
+        private Timer displayUpdateTick;
         private ILogger logger = Log.Logger.ForContext<ChaosModController>();
         private Overlay.IServer? overlayServer;
         private Dictionary<string, int> userVotedFor = new Dictionary<string, int>();
@@ -46,6 +44,7 @@ namespace TwitchChatVotingProxy
             this.votingReceiver.OnMessage += OnVoteReceiverMessage;
 
             // Setup the timer that will update the display
+            displayUpdateTick = new Timer(options.VotingDisplayUpdateMs);
             displayUpdateTick.Elapsed += DisplayUpdateTick;
             displayUpdateTick.Enabled = true;
         }
@@ -55,7 +54,7 @@ namespace TwitchChatVotingProxy
         /// </summary>
         private void DisplayUpdateTick(object? sender, ElapsedEventArgs e)
         {
-            overlayServer.UpdateVoting(activeVoteOptions);
+            overlayServer?.UpdateVoting(activeVoteOptions);
         }
         /// <summary>
         /// Calculate the voting result by counting them, and returning the one
@@ -116,31 +115,29 @@ namespace TwitchChatVotingProxy
         /// <summary>
         /// Is called when the chaos mod wants to know the voting result (callback)
         /// </summary>
-        private void OnGetVoteResult(object? sender, OnGetVoteResultArgs e)
+        private void OnGetVoteResult(object? sender, OnGetVoteResultArgs evt)
         {
-            // Tell the overlay server that the vote has ended
             try
             {
-                overlayServer.EndVoting();
+                overlayServer?.EndVoting();
 
             }
             catch (Exception err)
             {
-                Log.Error(err, "error ocurred");
+                throw new Exception("failed to end the voting", err);
             }
 
             // Evaluate what result calculation to use
             switch (options.VotingEvaluationMode)
             {
                 case EVotingMode.MAJORITY:
-                    e.ChosenOption = GetVoteResultByMajority();
+                    evt.ChosenOption = GetVoteResultByMajority();
                     break;
                 case EVotingMode.PERCENTAGE:
-                    e.ChosenOption = GetVoteResultByPercentage();
+                    evt.ChosenOption = GetVoteResultByPercentage();
                     break;
             }
 
-            // Vote round ended
             voteRunning = false;
         }
         /// <summary>
@@ -191,7 +188,7 @@ namespace TwitchChatVotingProxy
 
                     break;
                 case EOverlayMode.OVERLAY_OBS:
-                    overlayServer.NewVoting(activeVoteOptions);
+                    overlayServer?.NewVoting(activeVoteOptions);
                     break;
             }
             // Clear the old voted for information
@@ -207,7 +204,7 @@ namespace TwitchChatVotingProxy
         /// </summary>
         private void OnNoVotingRound(object? sender, EventArgs e)
         {
-            overlayServer.NoVotingRound();
+            overlayServer?.NoVotingRound();
         }
         /// <summary>
         /// Is called when the voting receiver receives a message
