@@ -64,6 +64,26 @@ namespace Shared
         }
 
         /// <summary>
+        /// Requires the key to result in a value that is a valid variant of the
+        /// specified enum.
+        /// </summary>
+        /// <exception cref="KeyNotFound" />
+        /// <exception cref="InvalidEnumVariant" />
+        public T RequireEnum<T>(string key) where T : struct, Enum
+        {
+            var value = RequireString(key);
+
+            try
+            {
+                return Enum.Parse<T>(value);
+            }
+            catch (ArgumentException)
+            {
+                throw new InvalidEnumVariant<T>(value, key);
+            }
+        }
+
+        /// <summary>
         /// Similar to <see cref="ReadValueInt" />, but requires the
         /// int to be present in the file.
         /// </summary>
@@ -222,6 +242,22 @@ namespace Shared
                 Exception originalException
             ) : base($"could not parse the value '{value}', key: '{key}', file: {fileName}", originalException)
             { }
+        }
+
+        public class InvalidEnumVariant<T> : Exception where T : struct, Enum
+        {
+
+            public InvalidEnumVariant(string value, string key) : base(GetMessage(value, key))
+            { }
+
+            private static string GetMessage(string value, string key)
+            {
+                var allowedVariants = String.Join(", ", Enum.GetNames<T>());
+
+                return $"the value '{value}' is not a valid variant for '{key}', "
+                    + $"allowed values are: [{allowedVariants}]";
+            }
+
         }
     }
 }
