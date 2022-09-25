@@ -1,6 +1,7 @@
 ﻿using Fleck;
 using Newtonsoft.Json;
 using Serilog;
+using Shared;
 using System;
 using System.Collections.Generic;
 
@@ -9,17 +10,22 @@ namespace TwitchChatVotingProxy.Overlay
 {
     class Server : IServer
     {
-        private ChaosModControllerOptions options;
+        // TODO: Change value to OverlaySocketPort
+        private static readonly string KEY_OVERLAY_SOCKET_PORT = "OverlayServerPort";
+
         private List<Fleck.IWebSocketConnection> connections = new List<Fleck.IWebSocketConnection>();
         private ILogger logger = Log.Logger.ForContext<Server>();
+        private int socketPort;
+        private bool retainInitialVotes;
 
-        public Server(ChaosModControllerOptions options)
+        public Server(OptionsFile options, bool retainInitialVotes)
         {
-            this.options = options;
+            socketPort = options.RequireInt(KEY_OVERLAY_SOCKET_PORT);
+            this.retainInitialVotes = retainInitialVotes;
 
             try
             {
-                var WSS = new Fleck.WebSocketServer($"ws://0.0.0.0:{options.OverlayServerSocketPort}");
+                var WSS = new Fleck.WebSocketServer($"ws://0.0.0.0:{socketPort}");
                 // Set the websocket listeners
                 WSS.Start(connection =>
                 {
@@ -105,7 +111,7 @@ namespace TwitchChatVotingProxy.Overlay
             var msg = new Message(
                 request,
                 voteOptions: voteOptions.ConvertAll(_ => new VoteOption(_)).ToArray(),
-                votingMode: options.RetainInitialVotes.ToString()
+                votingMode: retainInitialVotes.ToString()
             );
 
             // Count total votes      
