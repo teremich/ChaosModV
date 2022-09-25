@@ -48,12 +48,19 @@ namespace Shared
                 return Require<bool>(key, m_fileName);
             }
 
-            if (int.Parse(ReadValue(key)) == 0)
+            try
             {
-                return false;
-            }
+                if (int.Parse(ReadValue(key)) == 0)
+                {
+                    return false;
+                }
 
-            return true;
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw new FailedToParse(key, key, m_fileName, e);
+            }
         }
 
         /// <summary>
@@ -71,7 +78,14 @@ namespace Shared
                 return Require<int>(key, m_fileName);
             }
 
-            return int.Parse(key);
+            try
+            {
+                return int.Parse(ReadValue(key));
+            }
+            catch (Exception e)
+            {
+                throw new FailedToParse(key, key, m_fileName, e);
+            }
         }
 
         /// <summary>
@@ -196,8 +210,18 @@ namespace Shared
         {
             public KeyNotFound(string key, string fileName)
                 : base($"could not find the key '{key}' in the options file '{fileName}'")
-            {
-            }
+            { }
+        }
+
+        public class FailedToParse : Exception
+        {
+            public FailedToParse(
+                string value,
+                string key,
+                string fileName,
+                Exception originalException
+            ) : base($"could not parse the value '{value}', key: '{key}', file: {fileName}", originalException)
+            { }
         }
     }
 }
