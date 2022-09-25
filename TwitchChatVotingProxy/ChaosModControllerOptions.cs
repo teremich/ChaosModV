@@ -1,4 +1,5 @@
 using Shared;
+using System;
 using System.Linq;
 
 namespace TwitchChatVotingProxy
@@ -31,6 +32,7 @@ namespace TwitchChatVotingProxy
             VotingEvaluationMode = optionsFile.RequireInt(KEY_VOTING_EVALUATION_MODE) == 0
                 ? EVotingMode.MAJORITY
                 : EVotingMode.PERCENTAGE;
+            OverlayMode = Enum.Parse<EOverlayMode>(optionsFile.RequireString(KEY_OVERLAY_MODE));
             RetainInitialVotes = optionsFile.RequireBool(KEY_RETAIN_INITIAL_VOTES);
             PermittedUsernames = ParsePermittedUsernames(optionsFile.ReadValue(KEY_PERMITTED_USERNAMES));
         }
