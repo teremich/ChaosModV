@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace TwitchChatVotingProxy.VotingReceiver
 {
@@ -16,5 +17,14 @@ namespace TwitchChatVotingProxy.VotingReceiver
         /// </summary>
         /// <param name="message">Message that should be sent</param>
         void SendMessage(string message);
+        /// <summary>
+        /// Runs the event loop.
+        /// <br />
+        /// Have to code that fetches new messages here.
+        /// <br />
+        /// You may choose to not implement this method, if your underlying message
+        /// receiver is event based.
+        /// </summary>
+        async Task GetMessages() { await Task.Delay(10); }
     }
 }
