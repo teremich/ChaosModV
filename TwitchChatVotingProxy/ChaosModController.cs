@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
+using Shared;
 using TwitchChatVotingProxy.ChaosPipe;
 using TwitchChatVotingProxy.VotingReceiver;
 
@@ -10,6 +11,12 @@ namespace TwitchChatVotingProxy
 {
     class ChaosModController
     {
+        // TODO: generalize value of key
+        private static readonly string KEY_PERMITTED_USERNAMES = "TwitchPermittedUsernames";
+        // TODO: generalize value of key
+        private static readonly string KEY_VOTING_EVALUATION_MODE = "TwitchVotingChanceSystem";
+        private static readonly int VOTING_DISPLAY_UPDATE_MS = 200;
+
         private List<IVoteOption> activeVoteOptions = new List<IVoteOption>();
         private IChaosPipeClient chaosPipe;
         private Timer displayUpdateTick;
@@ -17,19 +24,28 @@ namespace TwitchChatVotingProxy
         private Overlay.IServer? overlayServer;
         private Dictionary<string, int> userVotedFor = new Dictionary<string, int>();
         private Random random = new Random();
-        private ChaosModControllerOptions options;
+        private EOverlayMode overlayMode;
+        private string[] permittedUsernames;
+        private bool retainInitialVotes;
+        private EVotingMode votingEvaluationMode;
         private int voteCounter = 0;
         private bool voteRunning = false;
         private IVotingReceiver votingReceiver;
 
         public ChaosModController(
-            ChaosModControllerOptions options,
+            OptionsFile optionsFile,
+            EOverlayMode overlayMode,
+            bool retainInitialVotes,
             IChaosPipeClient chaosPipe,
             IVotingReceiver votingReceiver,
             Overlay.IServer? overlayServer
         )
         {
-            this.options = options;
+            permittedUsernames = GetPermittedUsernames(optionsFile);
+            votingEvaluationMode = GetVotingEvaluationMode(optionsFile);
+
+            this.overlayMode = overlayMode;
+            this.retainInitialVotes = retainInitialVotes;
             this.chaosPipe = chaosPipe;
             this.overlayServer = overlayServer;
             this.votingReceiver = votingReceiver;
@@ -44,9 +60,36 @@ namespace TwitchChatVotingProxy
             this.votingReceiver.OnMessage += OnVoteReceiverMessage;
 
             // Setup the timer that will update the display
-            displayUpdateTick = new Timer(options.VotingDisplayUpdateMs);
+            displayUpdateTick = new Timer(VOTING_DISPLAY_UPDATE_MS);
             displayUpdateTick.Elapsed += DisplayUpdateTick;
             displayUpdateTick.Enabled = true;
+        }
+
+        private static EVotingMode GetVotingEvaluationMode(OptionsFile optionsFile)
+        {
+            // TODO: use Enum.TryParse and have literals in the file instead of 
+            // indexes.
+            return optionsFile.RequireInt(KEY_VOTING_EVALUATION_MODE) == 0
+                ? EVotingMode.MAJORITY
+                : EVotingMode.PERCENTAGE;
+        }
+
+        private static string[] GetPermittedUsernames(OptionsFile optionsFile)
+        {
+            var input = optionsFile.ReadValue(KEY_PERMITTED_USERNAMES);
+
+            if (input == null)
+            {
+                return new string[0];
+            }
+
+            return input
+                .Trim()
+                .ToLower()
+                .Split(",")
+                // Remove whitespace around usernames
+                .Select(name => name.Trim())
+                .ToArray();
         }
 
         /// <summary>
@@ -81,7 +124,7 @@ namespace TwitchChatVotingProxy
         private int GetVoteResultByPercentage()
         {
             var votesForOption = activeVoteOptions
-                .Select(_ => options.RetainInitialVotes ? _.Votes + 1 : _.Votes)
+                .Select(_ => retainInitialVotes ? _.Votes + 1 : _.Votes)
                 .ToList();
             var totalVotes = votesForOption.Sum();
 
@@ -127,8 +170,7 @@ namespace TwitchChatVotingProxy
                 throw new Exception("failed to end the voting", err);
             }
 
-            // Evaluate what result calculation to use
-            switch (options.VotingEvaluationMode)
+            switch (votingEvaluationMode)
             {
                 case EVotingMode.MAJORITY:
                     evt.ChosenOption = GetVoteResultByMajority();
@@ -160,7 +202,7 @@ namespace TwitchChatVotingProxy
                 return (IVoteOption)new VoteOption(voteOptionName, new List<string>() { match });
             }).ToList();
             // Depending on the overlay mode either inform the overlay server about the new vote or send a chat message
-            switch (options.OverlayMode)
+            switch (overlayMode)
             {
                 case EOverlayMode.CHAT_MESSAGES:
                     votingReceiver.SendMessage("Time for a new effect! Vote between:");
@@ -181,7 +223,7 @@ namespace TwitchChatVotingProxy
                         votingReceiver.SendMessage(msg);
                     }
 
-                    if (options.VotingEvaluationMode == EVotingMode.PERCENTAGE)
+                    if (votingEvaluationMode == EVotingMode.PERCENTAGE)
                     {
                         votingReceiver.SendMessage("Votes will affect the chance for one of the effects to occur.");
                     }
@@ -191,12 +233,9 @@ namespace TwitchChatVotingProxy
                     overlayServer?.NewVoting(activeVoteOptions);
                     break;
             }
-            // Clear the old voted for information
-            userVotedFor.Clear();
-            // Increase the vote counter
-            voteCounter++;
 
-            // Vote round started now
+            userVotedFor.Clear();
+            voteCounter++;
             voteRunning = true;
         }
         /// <summary>
@@ -250,12 +289,12 @@ namespace TwitchChatVotingProxy
         private bool IsUserAllowedToVote(string username)
         {
             // No names means everyone is allowed to vote
-            if (options.PermittedUsernames.Length == 0)
+            if (permittedUsernames.Length == 0)
             {
                 return true;
             }
 
-            return options.PermittedUsernames.Contains(username);
+            return permittedUsernames.Contains(username);
         }
     }
 }
