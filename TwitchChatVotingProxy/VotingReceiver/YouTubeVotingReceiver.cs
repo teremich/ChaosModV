@@ -108,6 +108,8 @@ namespace TwitchChatVotingProxy.VotingReceiver
 
                 if (cacheCurrentLiveBroadcast != null)
                 {
+                    logger.Information("found live broadcast!");
+
                     return cacheCurrentLiveBroadcast;
                 }
 
