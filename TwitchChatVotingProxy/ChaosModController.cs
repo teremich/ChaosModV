@@ -13,8 +13,7 @@ namespace TwitchChatVotingProxy
     {
         // TODO: generalize value of key
         private static readonly string KEY_PERMITTED_USERNAMES = "TwitchPermittedUsernames";
-        // TODO: generalize value of key
-        private static readonly string KEY_VOTING_EVALUATION_MODE = "TwitchVotingChanceSystem";
+        private static readonly string KEY_VOTING_EVALUATION_MODE = "VotingEvaluationMode";
         private static readonly int VOTING_DISPLAY_UPDATE_MS = 200;
 
         private List<IVoteOption> activeVoteOptions = new List<IVoteOption>();
@@ -27,7 +26,7 @@ namespace TwitchChatVotingProxy
         private EOverlayMode overlayMode;
         private string[] permittedUsernames;
         private bool retainInitialVotes;
-        private EVotingMode votingEvaluationMode;
+        private EVotingEvaluationMode votingEvaluationMode;
         private int voteCounter = 0;
         private bool voteRunning = false;
         private IVotingReceiver votingReceiver;
@@ -42,8 +41,8 @@ namespace TwitchChatVotingProxy
         )
         {
             permittedUsernames = GetPermittedUsernames(optionsFile);
-            votingEvaluationMode = GetVotingEvaluationMode(optionsFile);
-
+            votingEvaluationMode = optionsFile.RequireEnum<EVotingEvaluationMode>(KEY_VOTING_EVALUATION_MODE);
+            
             this.overlayMode = overlayMode;
             this.retainInitialVotes = retainInitialVotes;
             this.chaosPipe = chaosPipe;
@@ -63,15 +62,6 @@ namespace TwitchChatVotingProxy
             displayUpdateTick = new Timer(VOTING_DISPLAY_UPDATE_MS);
             displayUpdateTick.Elapsed += DisplayUpdateTick;
             displayUpdateTick.Enabled = true;
-        }
-
-        private static EVotingMode GetVotingEvaluationMode(OptionsFile optionsFile)
-        {
-            // TODO: use Enum.TryParse and have literals in the file instead of 
-            // indexes.
-            return optionsFile.RequireInt(KEY_VOTING_EVALUATION_MODE) == 0
-                ? EVotingMode.MAJORITY
-                : EVotingMode.PERCENTAGE;
         }
 
         private static string[] GetPermittedUsernames(OptionsFile optionsFile)
@@ -172,10 +162,10 @@ namespace TwitchChatVotingProxy
 
             switch (votingEvaluationMode)
             {
-                case EVotingMode.MAJORITY:
+                case EVotingEvaluationMode.Majority:
                     evt.ChosenOption = GetVoteResultByMajority();
                     break;
-                case EVotingMode.PERCENTAGE:
+                case EVotingEvaluationMode.Percentage:
                     evt.ChosenOption = GetVoteResultByPercentage();
                     break;
             }
@@ -223,7 +213,7 @@ namespace TwitchChatVotingProxy
                         votingReceiver.SendMessage(msg);
                     }
 
-                    if (votingEvaluationMode == EVotingMode.PERCENTAGE)
+                    if (votingEvaluationMode == EVotingEvaluationMode.Percentage)
                     {
                         votingReceiver.SendMessage("Votes will affect the chance for one of the effects to occur.");
                     }

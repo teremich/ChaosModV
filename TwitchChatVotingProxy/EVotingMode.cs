@@ -1,16 +1,8 @@
-﻿using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using TwitchLib.Api.Core.Enums;
-
-namespace TwitchChatVotingProxy
+﻿namespace TwitchChatVotingProxy
 {
-    // TODO: Rename to evaluation mode
-    // TODO: move to it's own file
-    enum EVotingMode
+    enum EVotingEvaluationMode
     {
-        MAJORITY,
-        PERCENTAGE,
+        Majority,
+        Percentage,
     }
 }
