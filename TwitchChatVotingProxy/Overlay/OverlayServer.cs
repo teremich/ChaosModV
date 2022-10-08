@@ -5,13 +5,11 @@ using Shared;
 using System;
 using System.Collections.Generic;
 
-// TODO: fix voting mode
 namespace TwitchChatVotingProxy.Overlay
 {
     class Server : IServer
     {
-        // TODO: Change value to OverlaySocketPort
-        private static readonly string KEY_OVERLAY_SOCKET_PORT = "OverlayServerPort";
+        private static readonly string KEY_OVERLAY_SOCKET_PORT = "OverlaySocketPort";
 
         private List<Fleck.IWebSocketConnection> connections = new List<Fleck.IWebSocketConnection>();
         private ILogger logger = Log.Logger.ForContext<Server>();

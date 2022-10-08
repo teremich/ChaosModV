@@ -11,10 +11,8 @@ namespace TwitchChatVotingProxy
 {
     class TwitchChatVotingProxy
     {
-        // TODO: generalize value of key
-        private static readonly string KEY_RETAIN_INITIAL_VOTES = "TwitchVotingChanceSystemRetainChance";
-        // TODO: generalize value of key
-        private static readonly string KEY_OVERLAY_MODE = "TwitchVotingOverlayMode";
+        private static readonly string KEY_RETAIN_INITIAL_VOTES = "VotingRetainInitialVotes";
+        private static readonly string KEY_OVERLAY_MODE = "OverlayMode";
         private static readonly string KEY_VOTING_RECEIVER = "VotingReceiver";
         private static ILogger logger;
 
@@ -36,8 +34,7 @@ namespace TwitchChatVotingProxy
 
             var optionsFile = new OptionsFile("./chaosmod/voting.ini");
             var retainInitialVotes = optionsFile.RequireBool(KEY_RETAIN_INITIAL_VOTES);
-            var overlayMode =
-                Enum.Parse<EOverlayMode>(optionsFile.RequireString(KEY_OVERLAY_MODE));
+            var overlayMode = optionsFile.RequireEnum<EOverlayMode>(KEY_OVERLAY_MODE);
             var overlayServer = GetOverlayServer(optionsFile, overlayMode, retainInitialVotes);
             var votingReceiver = GetVotingReceiver(optionsFile);
 
@@ -106,7 +103,7 @@ namespace TwitchChatVotingProxy
         {
             switch (overlayMode)
             {
-                case EOverlayMode.OVERLAY_OBS:
+                case EOverlayMode.Browser:
                     return true;
             }
 

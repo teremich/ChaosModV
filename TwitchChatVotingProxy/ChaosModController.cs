@@ -11,8 +11,7 @@ namespace TwitchChatVotingProxy
 {
     class ChaosModController
     {
-        // TODO: generalize value of key
-        private static readonly string KEY_PERMITTED_USERNAMES = "TwitchPermittedUsernames";
+        private static readonly string KEY_PERMITTED_USERNAMES = "PermittedUsernames";
         private static readonly string KEY_VOTING_EVALUATION_MODE = "VotingEvaluationMode";
         private static readonly int VOTING_DISPLAY_UPDATE_MS = 200;
 
@@ -194,7 +193,7 @@ namespace TwitchChatVotingProxy
             // Depending on the overlay mode either inform the overlay server about the new vote or send a chat message
             switch (overlayMode)
             {
-                case EOverlayMode.CHAT_MESSAGES:
+                case EOverlayMode.Chat:
                     votingReceiver.SendMessage("Time for a new effect! Vote between:");
                     foreach (IVoteOption voteOption in activeVoteOptions)
                     {
@@ -219,7 +218,7 @@ namespace TwitchChatVotingProxy
                     }
 
                     break;
-                case EOverlayMode.OVERLAY_OBS:
+                case EOverlayMode.Browser:
                     overlayServer?.NewVoting(activeVoteOptions);
                     break;
             }
