@@ -170,6 +170,7 @@ namespace TwitchChatVotingProxy.VotingReceiver
                 {
                     continuation = getContinuationToken();
                 }
+                // TODO: make an http post request to the given url and body
                 const string apiURL = "https://www.youtube.com/youtubei/v1/live_chat/get_live_chat?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false";
 
                 // body = {
@@ -209,6 +210,8 @@ namespace TwitchChatVotingProxy.VotingReceiver
                 //     },
                 //     "isInvalidationTimeoutRequest": "true"
                 // }
+
+                // TODO: parse the http response and get the `Message` data
 
                 return new List<Message>();
             }
