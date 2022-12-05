@@ -80,6 +80,8 @@ namespace TwitchChatVotingProxy
                     return new TwitchVotingReceiver(optionsFile);
                 case EVotingReceiver.YouTube:
                     return new YouTubeVotingReceiver(optionsFile);
+                case EVotingReceiver.YoutubeApiV1:
+                    return new YTapiV1VotingReceiver(optionsFile);
             }
 
             throw new Exception($"an unaccounted for voting receiver '{which}' was specified");

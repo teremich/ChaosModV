@@ -5,5 +5,6 @@ namespace TwitchChatVotingProxy.VotingReceiver
     {
         Twitch,
         YouTube,
+        YoutubeApiV1,
     }
 }
