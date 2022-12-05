@@ -212,6 +212,7 @@ namespace TwitchChatVotingProxy.VotingReceiver
                 // }
 
                 // TODO: parse the http response and get the `Message` data
+                // TODO: update the continuation token
 
                 return new List<Message>();
             }

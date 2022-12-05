@@ -33,11 +33,11 @@ namespace TwitchChatVotingProxy.VotingReceiver
 
         public YouTubeVotingReceiver(OptionsFile optionsFile)
         {
-            
+
             clientId = optionsFile.RequireString(KEY_CLIENT_ID);
             clientSecret = optionsFile.RequireString(KEY_CLIENT_SECRET);
         }
-        
+
         async Task IVotingReceiver.GetMessages()
         {
             var youtubeService = await GetYouTubeService();
@@ -48,6 +48,8 @@ namespace TwitchChatVotingProxy.VotingReceiver
             // Each requests returns a token, that the API can use to identify
             // what data we already received.
             req.PageToken = nextPageToken;
+            // the api doesn't allow for more than 2000 messages per response
+            req.MaxResults = 2000;
 
             var res = await req.ExecuteAsync();
 
