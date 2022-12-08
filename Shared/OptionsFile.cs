@@ -75,7 +75,7 @@ namespace Shared
 
             try
             {
-                return Enum.Parse<T>(value);
+                return (T)Enum.Parse(typeof(T), value);
             }
             catch (ArgumentException)
             {
@@ -252,7 +252,7 @@ namespace Shared
 
             private static string GetMessage(string value, string key)
             {
-                var allowedVariants = String.Join(", ", Enum.GetNames<T>());
+                var allowedVariants = String.Join(", ", Enum.GetNames(typeof(T)));
 
                 return $"the value '{value}' is not a valid variant for '{key}', "
                     + $"allowed values are: [{allowedVariants}]";
