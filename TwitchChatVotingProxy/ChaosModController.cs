@@ -22,7 +22,7 @@ namespace TwitchChatVotingProxy
         private Overlay.IServer? overlayServer;
         private Dictionary<string, int> userVotedFor = new Dictionary<string, int>();
         private Random random = new Random();
-        private EOverlayMode overlayMode;
+        private EPresentationMode presentationMode;
         private string[] permittedUsernames;
         private bool retainInitialVotes;
         private EVotingEvaluationMode votingEvaluationMode;
@@ -32,7 +32,7 @@ namespace TwitchChatVotingProxy
 
         public ChaosModController(
             OptionsFile optionsFile,
-            EOverlayMode overlayMode,
+            EPresentationMode presentationMode,
             bool retainInitialVotes,
             IChaosPipeClient chaosPipe,
             IVotingReceiver votingReceiver,
@@ -42,7 +42,7 @@ namespace TwitchChatVotingProxy
             permittedUsernames = GetPermittedUsernames(optionsFile);
             votingEvaluationMode = optionsFile.RequireEnum<EVotingEvaluationMode>(KEY_VOTING_EVALUATION_MODE);
 
-            this.overlayMode = overlayMode;
+            this.presentationMode = presentationMode;
             this.retainInitialVotes = retainInitialVotes;
             this.chaosPipe = chaosPipe;
             this.overlayServer = overlayServer;
@@ -190,35 +190,13 @@ namespace TwitchChatVotingProxy
 
                 return (IVoteOption)new VoteOption(voteOptionName, new List<string>() { match });
             }).ToList();
-            // Depending on the overlay mode either inform the overlay server about the new vote or send a chat message
-            switch (overlayMode)
+
+            switch (presentationMode)
             {
-                case EOverlayMode.Chat:
-                    votingReceiver.SendMessage("Time for a new effect! Vote between:");
-                    foreach (IVoteOption voteOption in activeVoteOptions)
-                    {
-                        string msg = string.Empty;
-
-                        bool firstIndex = true;
-                        foreach (string match in voteOption.Matches)
-                        {
-                            msg += firstIndex ? $"{match} " : $" / {match}";
-
-                            firstIndex = true;
-                        }
-
-                        msg += $": {voteOption.Label}\n";
-
-                        votingReceiver.SendMessage(msg);
-                    }
-
-                    if (votingEvaluationMode == EVotingEvaluationMode.Percentage)
-                    {
-                        votingReceiver.SendMessage("Votes will affect the chance for one of the effects to occur.");
-                    }
-
+                case EPresentationMode.Chat:
+                    SendOptionsAsChatMessage(activeVoteOptions);
                     break;
-                case EOverlayMode.Browser:
+                case EPresentationMode.Browser:
                     overlayServer?.NewVoting(activeVoteOptions);
                     break;
             }
@@ -226,6 +204,33 @@ namespace TwitchChatVotingProxy
             userVotedFor.Clear();
             voteCounter++;
             voteRunning = true;
+        }
+        private void SendOptionsAsChatMessage(List<IVoteOption> options)
+        {
+            votingReceiver.SendMessage("Time for a new effect! Vote between:");
+            foreach (IVoteOption option in options)
+            {
+                string msg = string.Empty;
+
+                // TODO: Isn't this just `String.Join(" / ", option.Matches)`?
+
+                bool firstIndex = true;
+                foreach (string match in option.Matches)
+                {
+                    msg += firstIndex ? $"{match} " : $" / {match}";
+
+                    firstIndex = true;
+                }
+
+                msg += $": {option.Label}\n";
+
+                votingReceiver.SendMessage(msg);
+            }
+
+            if (votingEvaluationMode == EVotingEvaluationMode.Percentage)
+            {
+                votingReceiver.SendMessage("Votes will affect the chance for one of the effects to occur.");
+            }
         }
         /// <summary>
         /// Is called when the chaos mod stars a no voting round (callback)

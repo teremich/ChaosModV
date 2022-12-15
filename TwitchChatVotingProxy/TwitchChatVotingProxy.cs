@@ -12,7 +12,7 @@ namespace TwitchChatVotingProxy
     class TwitchChatVotingProxy
     {
         private static readonly string KEY_RETAIN_INITIAL_VOTES = "VotingRetainInitialVotes";
-        private static readonly string KEY_OVERLAY_MODE = "OverlayMode";
+        private static readonly string KEY_PRESENTATION_MODE = "PresentationMode";
         private static readonly string KEY_VOTING_RECEIVER = "VotingReceiver";
         private static ILogger logger;
 
@@ -34,8 +34,8 @@ namespace TwitchChatVotingProxy
 
             var optionsFile = new OptionsFile("./chaosmod/voting.ini");
             var retainInitialVotes = optionsFile.RequireBool(KEY_RETAIN_INITIAL_VOTES);
-            var overlayMode = optionsFile.RequireEnum<EOverlayMode>(KEY_OVERLAY_MODE);
-            var overlayServer = GetOverlayServer(optionsFile, overlayMode, retainInitialVotes);
+            var presentationMode = optionsFile.RequireEnum<EPresentationMode>(KEY_PRESENTATION_MODE);
+            var overlayServer = GetOverlayServer(optionsFile, presentationMode, retainInitialVotes);
             var votingReceiver = GetVotingReceiver(optionsFile);
 
             // TODO: Ask pongo what should be in the "mutex guard".
@@ -48,7 +48,7 @@ namespace TwitchChatVotingProxy
                 var chaosPipe = new ChaosPipeClient();
                 var controller = new ChaosModController(
                     optionsFile,
-                    overlayMode,
+                    presentationMode,
                     retainInitialVotes,
                     chaosPipe,
                     votingReceiver,
@@ -87,11 +87,11 @@ namespace TwitchChatVotingProxy
 
         private static Overlay.IServer? GetOverlayServer(
             OptionsFile optionsFile,
-            EOverlayMode overlayMode,
+            EPresentationMode mode,
             bool retainInitialVotes
         )
         {
-            if (IsOverlayServerNeeded(overlayMode))
+            if (IsOverlayServerNeeded(mode))
             {
                 return new Overlay.Server(optionsFile, retainInitialVotes);
             }
@@ -99,11 +99,11 @@ namespace TwitchChatVotingProxy
             return null;
         }
 
-        private static bool IsOverlayServerNeeded(EOverlayMode overlayMode)
+        private static bool IsOverlayServerNeeded(EPresentationMode mode)
         {
-            switch (overlayMode)
+            switch (mode)
             {
-                case EOverlayMode.Browser:
+                case EPresentationMode.Browser:
                     return true;
             }
 
