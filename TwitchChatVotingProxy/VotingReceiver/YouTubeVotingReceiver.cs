@@ -33,11 +33,10 @@ namespace TwitchChatVotingProxy.VotingReceiver
 
         public YouTubeVotingReceiver(OptionsFile optionsFile)
         {
-            
             clientId = optionsFile.RequireString(KEY_CLIENT_ID);
             clientSecret = optionsFile.RequireString(KEY_CLIENT_SECRET);
         }
-        
+
         async Task IVotingReceiver.GetMessages()
         {
             var youtubeService = await GetYouTubeService();

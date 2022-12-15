@@ -41,7 +41,7 @@ namespace TwitchChatVotingProxy
         {
             permittedUsernames = GetPermittedUsernames(optionsFile);
             votingEvaluationMode = optionsFile.RequireEnum<EVotingEvaluationMode>(KEY_VOTING_EVALUATION_MODE);
-            
+
             this.overlayMode = overlayMode;
             this.retainInitialVotes = retainInitialVotes;
             this.chaosPipe = chaosPipe;
