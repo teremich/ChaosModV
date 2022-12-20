@@ -40,7 +40,9 @@ namespace TwitchChatVotingProxy
         )
         {
             permittedUsernames = GetPermittedUsernames(optionsFile);
+
             votingEvaluationMode = optionsFile.RequireEnum<EVotingEvaluationMode>(KEY_VOTING_EVALUATION_MODE);
+            logger.Information($"voting evaluation mode: '{votingEvaluationMode}'");
 
             this.presentationMode = presentationMode;
             this.retainInitialVotes = retainInitialVotes;
