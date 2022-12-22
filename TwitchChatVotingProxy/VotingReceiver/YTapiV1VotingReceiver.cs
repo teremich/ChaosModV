@@ -52,13 +52,13 @@ namespace TwitchChatVotingProxy.VotingReceiver
                 buf[index] = (byte)val;
                 return buf;
             }
-            public static byte[] concat(byte[] one, byte[] two)
-            {
-                byte[] ret = new byte[one.Length + two.Length];
-                Array.Copy(one, ret, one.Length);
-                Array.Copy(two, 0, ret, one.Length, two.Length);
-                return ret;
-            }
+            // public static byte[] concat(byte[] one, byte[] two)
+            // {
+            //     byte[] ret = new byte[one.Length + two.Length];
+            //     Array.Copy(one, ret, one.Length);
+            //     Array.Copy(two, 0, ret, one.Length, two.Length);
+            //     return ret;
+            // }
 
             public static byte[] concat(byte[][] byteArrays)
             {
@@ -79,7 +79,7 @@ namespace TwitchChatVotingProxy.VotingReceiver
             public static byte[] tp(long a, long b, byte[] ary)
             {
                 byte[] res = vn((b << 3) | a);
-                byte[] ret = concat(res, ary);
+                byte[] ret = concat(new byte[][] { res, ary });
                 return ret;
             }
 
@@ -87,12 +87,12 @@ namespace TwitchChatVotingProxy.VotingReceiver
             {
                 byte[] ary2 = Encoding.Default.GetBytes(ary);
                 long len = ary2.Length;
-                return tp(2, a, concat(vn(len), ary2));
+                return tp(2, a, concat(new byte[][] { vn(len), ary2 }));
             }
 
             public static byte[] rs(long a, byte[] ary)
             {
-                return tp(2, a, concat(vn(ary.Length), ary));
+                return tp(2, a, concat(new byte[][] { vn(ary.Length), ary }));
             }
 
             private byte[] nm(long a, long ary)
@@ -103,9 +103,9 @@ namespace TwitchChatVotingProxy.VotingReceiver
             private string _header()
             {
                 var S1_3 = rs(1, videoId);
-                var S1_5 = concat(rs(1, channelId), rs(2, videoId));
+                var S1_5 = concat(new byte[][] { rs(1, channelId), rs(2, videoId) });
 
-                var S1 = concat(rs(3, S1_3), rs(5, S1_5));
+                var S1 = concat(new byte[][] { rs(3, S1_3), rs(5, S1_5) });
                 var S3 = rs(48687757, rs(1, videoId));
                 var header_replay = concat(new byte[][] { rs(1, S1), rs(3, S3), new byte[] { 0x20, 0x01 } });
                 var realb64 = Convert.ToBase64String(header_replay);
@@ -175,87 +175,115 @@ namespace TwitchChatVotingProxy.VotingReceiver
                 return build(timeStamps);
             }
 
-
-
-            public async Task<List<OnMessageArgs>> get()
+            private async Task<JsonObject?> sendRequest()
             {
-                if (continuation == null)
+                if (continuation is null)
                 {
                     continuation = getContinuationToken();
                 }
                 const string apiURL = "https://www.youtube.com/youtubei/v1/live_chat/get_live_chat?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
-                string body = "{\"context\": {\"client\": {\"visitorData\": \"\", \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63,gzip(gfe)\", \"clientName\": \"WEB\", \"clientVersion\": \"2.20221206.01.00\"}}, \"continuation\": \"" + continuation + "\"}";
+                string body = "{\"context\": {\"client\": {\"visitorData\": \"\", \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63,gzip(gfe)\", \"clientName\": \"WEB\", \"clientVersion\": \"2.20221206.01.00\"}}, \"continuation\": \""
+                + continuation + "\"}";
 
                 var content = new StringContent(body);
                 var response = await client.PostAsync(apiURL, content);
-                JsonObject res = JsonObject.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
-                if (res == null || res["continuationContents"] == null)
-                {
-                    // is it bad, when we constantly write this warning and try again immediatly?
-                    // or should we just throw an exception because clearly the request isn't working right
-                    logger.Warning("videoId is probably incorrect or the video is private or something else happend so that the youtube api v1 didn't return the needed data");
-                    continuation = null;
-                    return new List<OnMessageArgs>();
-                }
-                JsonObject responseData = res["continuationContents"]!["liveChatContinuation"]!.AsObject();
-                var continuations = responseData!["continuations"]!.AsArray()![0]!.AsObject();
-                JsonNode? continuationData;
-                if (continuations.TryGetPropertyValue("invalidationContinuationData", out continuationData))
-                {
-                    continuation = continuationData!["continuation"]!.GetValue<string>();
-                }
-                else if (continuations.TryGetPropertyValue("timedContinuationData", out continuationData))
-                {
-                    continuation = continuationData!["continuation"]!.GetValue<string>();
-                }
-                else if (continuations.TryGetPropertyValue("reloadContinuationData", out continuationData))
-                {
-                    continuation = continuationData!["continuation"]!.GetValue<string>();
-                }
-                else if (continuations.TryGetPropertyValue("liveChatReplayContinuationData", out continuationData))
-                {
-                    continuation = continuationData!["continuation"]!.GetValue<string>();
-                }
-                var ret = new List<OnMessageArgs>();
+                return JsonObject.Parse(await response.Content.ReadAsStringAsync())?.AsObject();
+            }
 
+            private void parseContinuationData(JsonObject responseData)
+            {
+                var continuations = responseData["continuations"]?.AsArray()?[0]?.AsObject();
+                if (continuations is null)
+                {
+                    logger.Warning("This is very strange. Youtube shouldn't responde like that.");
+                    continuation = null;
+                    return;
+                }
+                JsonNode? continuationData;
+                if (!continuations.TryGetPropertyValue("invalidationContinuationData", out continuationData)
+                && !continuations.TryGetPropertyValue("timedContinuationData", out continuationData)
+                && !continuations.TryGetPropertyValue("reloadContinuationData", out continuationData)
+                && !continuations.TryGetPropertyValue("liveChatReplayContinuationData", out continuationData))
+                {
+                    continuation = null;
+                    return;
+                }
+                continuation = continuationData?["continuation"]?.GetValue<string>();
+            }
+
+            private List<OnMessageArgs> parseActions(JsonObject responseData)
+            {
+                var ret = new List<OnMessageArgs>();
                 JsonNode? actions;
                 if (!responseData.TryGetPropertyValue("actions", out actions))
                 {
                     return ret;
                 }
-                var actionsArray = actions!.AsArray();
-
-                try
+                var actionsArray = actions?.AsArray();
+                if (actionsArray is null)
                 {
-                    foreach (var action in actionsArray)
-                    {
-                        JsonNode? acia;
-                        if (!action!.AsObject().TryGetPropertyValue("addChatItemAction", out acia))
-                        {
-                            continue;
-                        }
-                        var lctmr = acia!["item"]!["liveChatTextMessageRenderer"]!.AsObject();
-                        JsonNode? messageContent;
-                        if (!lctmr["message"]!["runs"]![0]!.AsObject().TryGetPropertyValue("text", out messageContent))
-                        {
-                            continue;
-                        }
-                        OnMessageArgs m = new OnMessageArgs(
-                            userId: lctmr["authorExternalChannelId"]!.GetValue<string>(),
-                            message: messageContent!.GetValue<string>().Trim(),
-                            username: lctmr["authorName"]!["simpleText"]!.GetValue<string>()
-                        );
-                        ret.Add(m);
-
-                    }
+                    logger.Warning("This shouldn't happen. Youtube responded with weird JSON");
+                    return ret;
                 }
-                catch (Exception e)
+                foreach (var action in actionsArray)
                 {
-                    logger.Error(e.ToString());
-                    logger.Error(e.Message);
-                    logger.Error(e.StackTrace);
+                    if (action?.AsObject() is null)
+                    {
+                        continue;
+                    }
+                    JsonNode? acia;
+                    if (!action.AsObject().TryGetPropertyValue("addChatItemAction", out acia))
+                    {
+                        continue;
+                    }
+                    var lctmr = acia?["item"]?["liveChatTextMessageRenderer"]?.AsObject();
+                    var runs = lctmr?["message"]?["runs"]?[0]?.AsObject();
+                    if (runs is null)
+                    {
+                        continue;
+                    }
+                    JsonNode? messageContent;
+                    if (!runs.TryGetPropertyValue("text", out messageContent))
+                    {
+                        continue;
+                    }
+                    var userid = lctmr?["authorExternalChannelId"]?.GetValue<string>();
+                    var messageText = messageContent?.GetValue<string>().Trim();
+                    var user = lctmr?["authorName"]?["simpleText"]?.GetValue<string>();
+                    if (userid is null || messageText is null || messageText.Length == 0 || user is null)
+                    {
+                        continue;
+                    }
+                    OnMessageArgs m = new OnMessageArgs(
+                        userId: userid,
+                        message: messageText,
+                        username: user
+                    );
+                    ret.Add(m);
                 }
                 return ret;
+            }
+
+            public async Task<List<OnMessageArgs>> get()
+            {
+                var response = await sendRequest();
+                if (response is null || response["continuationContents"] is null)
+                {
+                    // TODO: test the voting with an incorrect videoId and see if the user sees this useful message
+                    logger.Warning("videoId is probably incorrect or the video is private or something else happend so that the youtube api v1 didn't return the needed data");
+                    continuation = null;
+                    return new List<OnMessageArgs>();
+                }
+                JsonObject? responseData = response["continuationContents"]?["liveChatContinuation"]?.AsObject();
+                if (responseData is null)
+                {
+                    logger.Warning("are you sure you have entered the current stream id?");
+                    continuation = null;
+                    return new List<OnMessageArgs>();
+                }
+                parseContinuationData(responseData);
+                List<OnMessageArgs> messages = parseActions(responseData);
+                return messages;
             }
         } // class Magic
 
