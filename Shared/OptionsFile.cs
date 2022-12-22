@@ -75,7 +75,21 @@ namespace Shared
 
             try
             {
-                return (T)Enum.Parse(typeof(T), value);
+
+#if NET5_0_OR_GREATER
+                return Enum.Parse<T>(value);
+#else
+                // Important: TryParse will simply use the first enum variant if
+                // it fails. It's important to check the returned bool if
+                // parsing was a success.
+                var converted = Enum.TryParse<T>(value, false, out var result);
+                if (!converted)
+                {
+                    throw new ArgumentException();
+                }
+                return result;
+#endif
+
             }
             catch (ArgumentException)
             {
@@ -252,12 +266,17 @@ namespace Shared
 
             private static string GetMessage(string value, string key)
             {
-                var allowedVariants = String.Join(", ", Enum.GetNames(typeof(T)));
+
+#if NET5_0_OR_GREATER
+                var allowedVariants = String.Join(", ", Enum.GetNames<T>());
+
 
                 return $"the value '{value}' is not a valid variant for '{key}', "
                     + $"allowed values are: [{allowedVariants}]";
+#else
+                return $"the value '{value}' is not a valid variant for '{key}'";
+#endif
             }
-
         }
     }
 }

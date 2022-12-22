@@ -18,13 +18,14 @@ namespace TwitchChatVotingProxy.VotingReceiver
 
         private ILogger logger = Log.Logger.ForContext<TwitchVotingReceiver>();
         private TwitchClient twitchClient;
+        private string channelName;
 
         public TwitchVotingReceiver(OptionsFile options)
         {
             var userName = options.RequireString("TwitchUserName");
             logger.Information($"specified username: '{userName}'");
 
-            var channelName = options.RequireString("TwitchChannelName");
+            channelName = options.RequireString("TwitchChannelName");
             logger.Information($"trying to connect to cannel '{channelName}'...");
 
             var oauth = options.RequireString("TwitchChannelOAuth");
@@ -49,7 +50,16 @@ namespace TwitchChatVotingProxy.VotingReceiver
 
         public void SendMessage(string message)
         {
-            throw new NotImplementedException();
+            logger.Information($@"sending message to twitch chat '{message}'");
+
+            try
+            {
+                twitchClient.SendMessage(channelName, message);
+            }
+            catch (Exception e)
+            {
+                logger.Error($"failed sending message to twitch chat", e);
+            }
         }
 
         private void OnConnected(object? sender, OnConnectedArgs e)

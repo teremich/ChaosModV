@@ -1,6 +1,6 @@
 ﻿namespace TwitchChatVotingProxy
 {
-    enum EOverlayMode
+    enum EPresentationMode
     {
         Chat,
         InGame,

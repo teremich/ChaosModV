@@ -1,9 +1,5 @@
 ﻿using System.Collections.Generic;
 
-// TODO: Fix the naming of the namespace
-// Given that only one of the modes here is an actual "overlay", the name seems
-// an odd choice. Other modes are "char" or "in game". "VotingPresentation", or
-// "VotingDisplay" may be a more suitable name.
 namespace TwitchChatVotingProxy.Overlay
 {
     interface IServer
