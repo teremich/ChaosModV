@@ -216,29 +216,44 @@ namespace TwitchChatVotingProxy.VotingReceiver
                 {
                     continuation = continuationData!["continuation"]!.GetValue<string>();
                 }
-
-                var actions = responseData["actions"]!.AsArray();
                 var ret = new List<OnMessageArgs>();
-                foreach (var action in actions)
-                {
-                    JsonNode? acia;
-                    if (!action!.AsObject().TryGetPropertyValue("addChatItemAction", out acia))
-                    {
-                        continue;
-                    }
-                    var lctmr = acia!["item"]!["liveChatTextMessageRenderer"]!.AsObject();
-                    JsonNode? messageContent;
-                    if (!lctmr["message"]!["runs"]![0]!.AsObject().TryGetPropertyValue("text", out messageContent))
-                    {
-                        continue;
-                    }
-                    OnMessageArgs m = new OnMessageArgs(
-                        userId: lctmr["authorExternalChannelId"]!.GetValue<string>(),
-                        message: messageContent!.GetValue<string>().Trim(),
-                        username: lctmr["authorName"]!["simpleText"]!.GetValue<string>()
-                    );
-                    ret.Add(m);
 
+                JsonNode? actions;
+                if (!responseData.TryGetPropertyValue("actions", out actions))
+                {
+                    return ret;
+                }
+                var actionsArray = actions!.AsArray();
+
+                try
+                {
+                    foreach (var action in actionsArray)
+                    {
+                        JsonNode? acia;
+                        if (!action!.AsObject().TryGetPropertyValue("addChatItemAction", out acia))
+                        {
+                            continue;
+                        }
+                        var lctmr = acia!["item"]!["liveChatTextMessageRenderer"]!.AsObject();
+                        JsonNode? messageContent;
+                        if (!lctmr["message"]!["runs"]![0]!.AsObject().TryGetPropertyValue("text", out messageContent))
+                        {
+                            continue;
+                        }
+                        OnMessageArgs m = new OnMessageArgs(
+                            userId: lctmr["authorExternalChannelId"]!.GetValue<string>(),
+                            message: messageContent!.GetValue<string>().Trim(),
+                            username: lctmr["authorName"]!["simpleText"]!.GetValue<string>()
+                        );
+                        ret.Add(m);
+
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e.ToString());
+                    logger.Error(e.Message);
+                    logger.Error(e.StackTrace);
                 }
                 return ret;
             }
