@@ -116,30 +116,30 @@ namespace TwitchChatVotingProxy.VotingReceiver
 
             private string build(long[] ts)
             {
-                var b1 = new byte[] { 0x08, 0x00 };
-                var b2 = new byte[] { 0x10, 0x00 };
-                var b3 = new byte[] { 0x18, 0x00 };
-                var b4 = new byte[] { 0x20, 0x00 };
-                var b7 = new byte[] { 0x3a, 0x00 };
-                var b8 = new byte[] { 0x40, 0x00 };
-                var b9 = new byte[] { 0x4a, 0x00 };
+                byte[] b1 = { 0x08, 0x00 };
+                byte[] b2 = { 0x10, 0x00 };
+                byte[] b3 = { 0x18, 0x00 };
+                byte[] b4 = { 0x20, 0x00 };
+                byte[] b7 = { 0x3a, 0x00 };
+                byte[] b8 = { 0x40, 0x00 };
+                byte[] b9 = { 0x4a, 0x00 };
                 var timestamp2 = nm(10, ts[1]);
-                var b11 = new byte[] { 0x58, 0x03 };
-                var b15 = new byte[] { 0x78, 0x00 };
+                byte[] b11 = { 0x58, 0x03 };
+                byte[] b15 = { 0x78, 0x00 };
 
                 var header = rs(3, _header());
 
                 var timestamp1 = nm(5, ts[0]);
-                var s6 = new byte[] { 0x30, 0x00 };
-                var s7 = new byte[] { 0x38, 0x00 };
-                var s8 = new byte[] { 0x40, 0x01 };
+                byte[] s6 = { 0x30, 0x00 };
+                byte[] s7 = { 0x38, 0x00 };
+                byte[] s8 = { 0x40, 0x01 };
                 var body = rs(9, concat(new byte[][] { b1, b2, b3, b4, b7, b8, b9, timestamp2, b11, b15 }));
                 var timestamp3 = nm(10, ts[2]);
                 var timestamp4 = nm(11, ts[3]);
-                var s13 = new byte[] { 0x68, 0x01 };
-                var chattype = new byte[] { 0x82, 0x01, 0x02, 0x08, 0x01 };
-                var s17 = new byte[] { 0x88, 0x01, 0x00 };
-                var str19 = new byte[] { 0x9a, 0x01, 0x02, 0x08, 0x00 };
+                byte[] s13 = { 0x68, 0x01 };
+                byte[] chattype = { 0x82, 0x01, 0x02, 0x08, 0x01 };
+                byte[] s17 = { 0x88, 0x01, 0x00 };
+                byte[] str19 = { 0x9a, 0x01, 0x02, 0x08, 0x00 };
                 var timestamp5 = nm(20, ts[4]);
                 var entity = concat(new byte[][] {
                     header, timestamp1, s6, s7, s8, body, timestamp3,
