@@ -14,7 +14,7 @@ namespace TwitchChatVotingProxy.VotingReceiver
 
         public event EventHandler<OnMessageArgs>? OnMessage;
 
-        private static ILogger logger = Log.Logger.ForContext<YouTubeVotingReceiver>();
+        private static ILogger logger = Log.Logger.ForContext<YTapiV1VotingReceiver>();
         private Magic details;
         private class Magic
         {
@@ -269,7 +269,6 @@ namespace TwitchChatVotingProxy.VotingReceiver
                 var response = await sendRequest();
                 if (response is null || response["continuationContents"] is null)
                 {
-                    // TODO: test the voting with an incorrect videoId and see if the user sees this useful message
                     logger.Warning("videoId is probably incorrect or the video is private or something else happend so that the youtube api v1 didn't return the needed data");
                     continuation = null;
                     return new List<OnMessageArgs>();
